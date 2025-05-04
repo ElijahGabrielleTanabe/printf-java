@@ -13,7 +13,7 @@ public class Printf
     //!!MEGA JANK!!
     private Map<String, Object> types = Map.of(
         "d", Integer.valueOf(0),
-        "f", Double.valueOf(0), //Promote Floats to Double
+        "f", Double.valueOf(0),
         "s", String.valueOf(""),
         "c", Character.valueOf(' ')
     );
@@ -26,7 +26,7 @@ public class Printf
 
     public void print(String s, Object ... args)
     {
-        //# find all format parameters inside message, store in a list
+        //# Find all format parameters inside message, store in a list
             // Regex: %[\d-+.dfcs]+
         StringBuilder message = new StringBuilder(s);
         ArrayList<String> formatParameters = new ArrayList<>();
@@ -42,7 +42,7 @@ public class Printf
         //# Verify number of format parameters are the same as args
         if (formatParameters.size() != args.length) { throw new IllegalArgumentException(); }
 
-        System.out.println(message);
+        //System.out.println(message);
   
         //# Concatenate formated argument to message
             // Replace from format parameters position
@@ -62,8 +62,10 @@ public class Printf
 
     public <T> String buildFormatedArg(String format, T o)
     {
-        System.out.println(format);
-        System.out.println(o + " " + o.getClass().getName());
+        //# Verify type is instanceof argument
+            //Promote Floats to Double
+        System.out.println("Parameter: " + format);
+        System.out.println("Argument: " + o + " " + o.getClass().getName());
 
         //# Verify format parameters syntax
             // Structure: %[flags][width][.precision]type
@@ -73,13 +75,28 @@ public class Printf
 
         //# Apply format to associated argument
             // Split into four parts (flags, width, precision, type)
-                // Flag Regex:
-                // Width Regex:
-                // Precision Regex:
+        String flags = regexMatch("(?<=%)[+-0]+(?=[\\d.[dfsc]])", format);
+        
+                // Flag Regex: %[+-0](\\d+|)(.[1-9](\\d+|)|)([dfsc])
+                // Width Regex: []
+                // Precision Regex: ()
                 // Type Regex:
             // Apply each individual part to the associated argument (if present)
 
         return "poop";
+    }
+
+    public String regexMatch(String regex, String s)
+    {
+        StringBuilder comp = new StringBuilder();
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(s);
+
+        while (matcher.find()) { comp.append(matcher.group()); }
+
+        System.out.println("group: " + comp + "\n");
+
+        return comp.toString();
     }
 
     public String getLastPrint() { return this.lastPrint; }
