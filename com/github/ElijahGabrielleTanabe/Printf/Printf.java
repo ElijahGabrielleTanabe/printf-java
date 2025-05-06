@@ -56,7 +56,7 @@ public class Printf
         //Print out the finished product!!
         //OR
         //Return a String for usage
-        System.out.println(message);
+        System.out.print(message);
         this.lastPrint = message.toString();
     }   
 
@@ -64,20 +64,22 @@ public class Printf
     {
         //# Verify type is instanceof argument
             //Promote Floats to Double
-        System.out.println("Parameter: " + format);
-        System.out.println("Argument: " + o + " " + o.getClass().getName());
+        System.out.println("\nParameter: " + format);
+        System.out.println("Argument: " + o + " " + o.getClass().getName() + "\n");
 
         //# Verify format parameters syntax
             // Structure: %[flags][width][.precision]type
                 // Chaining flags is valid syntax
                 // No duplicate flags
-        if (!format.matches("%([+-0]+|)(\\d+|)(.[1-9](\\d+|)|)([dfsc])")) { throw new IllegalArgumentException("Exceptioning'd"); }
+        if (!format.matches("%([+-0]+|)(\\d+|)(\\.[1-9](\\d+|)|)([dfsc])")) { throw new IllegalArgumentException("Exceptioning'd"); }
 
         //# Apply format to associated argument
             // Split into four parts (flags, width, precision, type)
-        String flags = regexMatch("(?<=%)[+-0]+(?=[\\d.[dfsc]])", format);
-        
-                // Flag Regex: %[+-0](\\d+|)(.[1-9](\\d+|)|)([dfsc])
+            // Flag Regex: (?<=%)[+-0]+(?=[\\d.[dfsc]])
+        String flags = regexMatch("(?:%)([+-0]+)(?:[\\d\\.dfsc])", format);
+        String width = regexMatch("(?:[+-0%])([1-9]+)(?:\\.\\d+)?(?:[.dfsc])", format);
+        String precision = regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format);
+        String type = regexMatch("(?:\\d|[+-0]|%)([dfsc])", format);
                 // Width Regex: []
                 // Precision Regex: ()
                 // Type Regex:
@@ -92,9 +94,20 @@ public class Printf
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(s);
 
-        while (matcher.find()) { comp.append(matcher.group()); }
+        while (matcher.find()) 
+        {
+            for (int i = 1; i <= matcher.groupCount(); i++) 
+            {
+                String group = matcher.group(i);
 
-        System.out.println("group: " + comp + "\n");
+                if (group != null) 
+                {
+                    comp.append(group);
+                }
+            }
+        }
+
+        System.out.println("group: " + comp);
 
         return comp.toString();
     }
