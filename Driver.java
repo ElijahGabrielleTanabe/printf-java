@@ -10,6 +10,6 @@ public class Driver
         String s = "Brrrrr";
         Character c = 'r';
         Printf print = new Printf();
-        print.print("Hello %+013d World %-1.20f Hello %0s World %7.2c Hello %+.6f", d, f, s, c, dd);
+        print.print("Hello %+0-13.5d World %-1.5f Hello %0.20s World %7.2c Hello %+.6f", d, f, s, c, dd);
     }
 }

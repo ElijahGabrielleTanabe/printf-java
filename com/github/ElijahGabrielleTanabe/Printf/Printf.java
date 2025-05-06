@@ -42,6 +42,18 @@ public class Printf
         //# Verify number of format parameters are the same as args
         if (formatParameters.size() != args.length) { throw new IllegalArgumentException(); }
 
+        //# Verify format parameters syntax
+            // Structure: %[flags][width][.precision]type
+                // Chaining flags is valid syntax
+                //!!NO DUPLICATE FLAGS!!
+        for (String format : formatParameters)
+        {
+            if (!format.matches("%([+-[0]]+)?(\\d+)?(\\.[1-9](\\d+|)|\\.[0])?([dfsc])")) 
+            { 
+                throw new IllegalArgumentException("Improper Format: " + format); 
+            }
+        }
+        
         //System.out.println(message);
   
         //# Concatenate formated argument to message
@@ -68,13 +80,7 @@ public class Printf
 
     private String[] parseParameters(String format)
     {
-        //# Verify format parameters syntax
-            // Structure: %[flags][width][.precision]type
-                // Chaining flags is valid syntax
-                // No duplicate flags
-        if (!format.matches("%([+-0]+|)(\\d+|)(\\.[1-9](\\d+|)|)([dfsc])")) { throw new IllegalArgumentException("Exceptioning'd"); }
-
-        //# Apply format to associated argument
+        //# Parse format into parts
             // Split into four parts (flags, width, precision, type)
         String[] s = {
             regexMatch("(?:%)([+-[0]]+)(?:\\.|\\d|[dfsc])?", format), //Flags
@@ -123,6 +129,7 @@ public class Printf
 
     public String buildFormatedArg(String[] format, String o)
     {
+        StringBuilder result = null;
         String flags = format[0];
         String width = format[1];
         String precision = format[2];
@@ -131,27 +138,93 @@ public class Printf
         System.out.println("Parameter: " + Arrays.deepToString(format));
         System.out.println("Argument: " + o + " " + types.get(type));
 
-        // For floats & doubles
-            // Round to original precision if no precision is given
-        if (precision.isEmpty() && type.equals("f"))
-        {
-            precision = Integer.toString(o.split("\\.")[1].length());
-            System.out.println(precision);
-        }
-        
-
         //# Apply each individual part to the associated argument (if present)
-            // Width overrides precision
+            // Apply precision
+        switch(type)
+        {
+            case "d" -> {
+                // Precision for Integers is minimum number of digits
+                    // Pad with leadings 0's if number of digits is less than precision
+                    // Supress output when precision is 0
+                if (!precision.isEmpty() && o.length() < Integer.parseInt(precision))
+                {
+                    result = new StringBuilder(o);
+                    
+                    int remainder = Integer.parseInt(precision) - o.length();
 
-            // Precision for Integers is minimum number of digits
-                // Pad with leadings 0's if number of digits is less than precision
+                    for (int i = 0; i < remainder; i++)
+                    {
+                        result.insert(0, '0');
+                    }
+                }
+                else if (!precision.isEmpty() && Integer.parseInt(precision) == 0)
+                {
+                    result = new StringBuilder();
+                }
+                else
+                {
+                    result = new StringBuilder(o);
+                }
+            }
+            case "f" -> {
+                // Precision for floats and doubles is the number of decimal digits
+                // Minimum of 1, not truncated by width
+                int p;
 
-            // Precision for floats 
+                // Round to original precision if no precision is given
+                if (precision.isEmpty())
+                {
+                    p = o.split("\\.")[1].length();
+                    System.out.println(precision);
+                }
+                else
+                {
+                    p = Integer.parseInt(precision);
+                }
+                
+                result = new StringBuilder(round(Double.valueOf(o), p).toString());
 
-            // Precision for Strings is the maximum number of characters
+                int remainder = result.toString().split("\\.")[1].length();
+
+                if (remainder < p)
+                {
+                    for (int i = 0; i < p - remainder; i++)
+                    {
+                        result.append("0");
+                    }
+                }
+            }
+            case "s" -> {
+                // Precision for Strings is the maximum number of characters
                 // Truncate at position of precision if string length is greater than precision
+                if (!precision.isEmpty() && o.length() > Integer.parseInt(precision)) 
+                {
+                    result = new StringBuilder(o.substring(0, Integer.parseInt(precision))); 
+                }
+                else if (!precision.isEmpty() && Integer.parseInt(precision) == 0)
+                {
+                    result = new StringBuilder(o.substring(0, 1));
+                }
+                else
+                {
+                    result = new StringBuilder(o);
+                }
+            }
+            case "c" -> {
+                // Precision for characters does nothing
+                result = new StringBuilder(o);
+            }
+            default -> throw new IllegalArgumentException("Unknown Type: " + type);
+        }
 
-            // Precision for characters does nothing
+        System.out.println(result);
+
+        // Precision for characters does nothing
+
+            // Apply width
+                // Argument is not truncated even if it is greater than width
+                // Apply flags
+
         System.out.println();
 
         return "test";
