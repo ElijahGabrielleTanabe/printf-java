@@ -1,6 +1,7 @@
 package com.github.ElijahGabrielleTanabe.Printf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,7 +12,7 @@ public class Printf
 
     //List of types (key:value pair list)
     //!!MEGA JANK!!
-    private Map<String, Object> types = Map.of(
+    private final Map<String, String> types = Map.of(
         "d", "java.lang.Integer",
         "f", "java.lang.Double",
         "s", "java.lang.String",
@@ -48,8 +49,14 @@ public class Printf
         for (int i = 0; i < formatParameters.size(); i++)
         {
             String fp = formatParameters.get(i);
+            System.out.println(fp);
             int pos = message.indexOf(fp);
-            message.replace(pos, pos + fp.length(), buildFormatedArg(fp, args[i]));
+            String[] fp1 = parseParameters(fp);
+            String type = fp1[3];
+
+            String arg = transformArgument(type, args[i]);
+
+            message.replace(pos, pos + fp.length(), buildFormatedArg(fp1, arg));
         }
 
         //Print out the finished product!!
@@ -57,13 +64,10 @@ public class Printf
         //Return a String for usage
         System.out.print(message);
         this.lastPrint = message.toString();
-    }   
+    }
 
-    public <T> String buildFormatedArg(String format, T o)
+    private String[] parseParameters(String format)
     {
-        System.out.println("\nParameter: " + format);
-        System.out.println("Argument: " + o + " " + o.getClass().getName() + "\n");
-
         //# Verify format parameters syntax
             // Structure: %[flags][width][.precision]type
                 // Chaining flags is valid syntax
@@ -72,27 +76,83 @@ public class Printf
 
         //# Apply format to associated argument
             // Split into four parts (flags, width, precision, type)
-        String flags = regexMatch("(?:%)([+-0]+)(?:[\\d\\.dfsc])", format);
-        String width = regexMatch("(?:[+-0%])([1-9]+)(?:\\.\\d+)?(?:[.dfsc])", format);
-        String precision = regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format);
-        String type = regexMatch("(?:\\d|[+-0]|%)([dfsc])", format);
+        String[] s = {
+            regexMatch("(?:%)([+-[0]]+)(?:\\.|\\d|[dfsc])?", format), //Flags
+            regexMatch("(?:[+-[0]%])(?<!\\.)([1-9]+)(?:\\.\\d+)?(?:[.dfsc])", format), //Width
+            regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format), //Precision
+            regexMatch("(?:\\d|[+-[0]]|%)([dfsc])", format) //Type
+        };
+
+        return s;
+    }
+
+    private <T> String transformArgument(String type, T o)
+    {
+        //# Verify type is instanceof argument
+        try 
+        {
+            // Promote Floats to Double (C printf functionality)
+            if (o instanceof Float aFloat)
+            {
+                Double d = aFloat.doubleValue();
+
+                if (!Class.forName(types.get(type)).isInstance(d))
+                {
+                    throw new IllegalArgumentException("Illegal type");
+                }
+
+                return d.toString();
+            }
+            else if (!Class.forName(types.get(type)).isInstance(o))
+            {
+                throw new IllegalArgumentException("Illegal type");
+            }
+
+            if (o != null)
+            {
+                return o.toString();
+            }
+        } 
+        catch (ClassNotFoundException e) 
+        {
+            e.printStackTrace();
+        }
+        
+        throw new IllegalArgumentException("Illegal type");
+    }
+
+    public String buildFormatedArg(String[] format, String o)
+    {
+        String flags = format[0];
+        String width = format[1];
+        String precision = format[2];
+        String type = format[3];
+
+        System.out.println("Parameter: " + Arrays.deepToString(format));
+        System.out.println("Argument: " + o + " " + types.get(type));
 
         // For floats & doubles
             // Round to original precision if no precision is given
         if (precision.isEmpty() && type.equals("f"))
         {
-            precision = Integer.toString(o.toString().split("\\.")[1].length());
+            precision = Integer.toString(o.split("\\.")[1].length());
             System.out.println(precision);
         }
         
-        //# Verify type is instanceof argument
-            // Promote Floats to Double
-        System.out.println(o.getClass().getName());
 
         //# Apply each individual part to the associated argument (if present)
             // Width overrides precision
-            // Precision for integers is minimum number of digits
+
+            // Precision for Integers is minimum number of digits
                 // Pad with leadings 0's if number of digits is less than precision
+
+            // Precision for floats 
+
+            // Precision for Strings is the maximum number of characters
+                // Truncate at position of precision if string length is greater than precision
+
+            // Precision for characters does nothing
+        System.out.println();
 
         return "test";
     }
@@ -116,16 +176,14 @@ public class Printf
             }
         }
 
-        System.out.println("group: " + comp);
-
         return comp.toString();
     }
-
-    public String getLastPrint() { return this.lastPrint; }
 
     //!!VERIFY ACCURACY!!//
     public static Double round(Double value, int scale) 
     {
         return Math.round(value * Math.pow(10, scale)) / Math.pow(10, scale);
     }
+
+    public String getLastPrint() { return this.lastPrint; }
 }
