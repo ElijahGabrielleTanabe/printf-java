@@ -12,13 +12,12 @@ public class Printf
     //List of types (key:value pair list)
     //!!MEGA JANK!!
     private Map<String, Object> types = Map.of(
-        "d", Integer.valueOf(0),
-        "f", Double.valueOf(0),
-        "s", String.valueOf(""),
-        "c", Character.valueOf(' ')
+        "d", "java.lang.Integer",
+        "f", "java.lang.Double",
+        "s", "java.lang.String",
+        "c", "java.lang.Character"
     );
 
-    // Create a printf object for std.out
     public Printf()
     {
         this.lastPrint = "";
@@ -62,8 +61,6 @@ public class Printf
 
     public <T> String buildFormatedArg(String format, T o)
     {
-        //# Verify type is instanceof argument
-            //Promote Floats to Double
         System.out.println("\nParameter: " + format);
         System.out.println("Argument: " + o + " " + o.getClass().getName() + "\n");
 
@@ -75,17 +72,29 @@ public class Printf
 
         //# Apply format to associated argument
             // Split into four parts (flags, width, precision, type)
-            // Flag Regex: (?<=%)[+-0]+(?=[\\d.[dfsc]])
         String flags = regexMatch("(?:%)([+-0]+)(?:[\\d\\.dfsc])", format);
         String width = regexMatch("(?:[+-0%])([1-9]+)(?:\\.\\d+)?(?:[.dfsc])", format);
         String precision = regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format);
         String type = regexMatch("(?:\\d|[+-0]|%)([dfsc])", format);
-                // Width Regex: []
-                // Precision Regex: ()
-                // Type Regex:
-            // Apply each individual part to the associated argument (if present)
 
-        return "poop";
+        // For floats & doubles
+            // Round to original precision if no precision is given
+        if (precision.isEmpty() && type.equals("f"))
+        {
+            precision = Integer.toString(o.toString().split("\\.")[1].length());
+            System.out.println(precision);
+        }
+        
+        //# Verify type is instanceof argument
+            // Promote Floats to Double
+        System.out.println(o.getClass().getName());
+
+        //# Apply each individual part to the associated argument (if present)
+            // Width overrides precision
+            // Precision for integers is minimum number of digits
+                // Pad with leadings 0's if number of digits is less than precision
+
+        return "test";
     }
 
     public String regexMatch(String regex, String s)
@@ -113,4 +122,10 @@ public class Printf
     }
 
     public String getLastPrint() { return this.lastPrint; }
+
+    //!!VERIFY ACCURACY!!//
+    public static Double round(Double value, int scale) 
+    {
+        return Math.round(value * Math.pow(10, scale)) / Math.pow(10, scale);
+    }
 }
