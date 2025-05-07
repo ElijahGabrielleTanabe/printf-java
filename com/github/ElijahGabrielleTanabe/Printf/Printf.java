@@ -135,8 +135,9 @@ public class Printf
         String precision = format[2];
         String type = format[3];
 
-        System.out.println("Parameter: " + Arrays.deepToString(format));
-        System.out.println("Argument: " + o + " " + types.get(type));
+        System.out.println("F-Parameters: " + Arrays.deepToString(format));
+        System.out.println("Argument: " + o);
+        System.out.println("Type: " + types.get(type));
 
         //# Apply each individual part to the associated argument (if present)
             // Apply precision
@@ -159,11 +160,18 @@ public class Printf
                 }
                 else if (!precision.isEmpty() && Integer.parseInt(precision) == 0)
                 {
-                    result = new StringBuilder();
+                    result = new StringBuilder("");
+                    break;
                 }
                 else
                 {
                     result = new StringBuilder(o);
+                }
+
+                if (o.contains("-"))
+                {
+                    result.deleteCharAt(result.indexOf("-"));
+                    result.insert(0, "-");
                 }
             }
             case "f" -> {
@@ -175,7 +183,6 @@ public class Printf
                 if (precision.isEmpty())
                 {
                     p = o.split("\\.")[1].length();
-                    System.out.println(precision);
                 }
                 else
                 {
@@ -216,21 +223,43 @@ public class Printf
             }
             default -> throw new IllegalArgumentException("Unknown Type: " + type);
         }
+            
+        // Argument is not truncated even if it is greater than width
+            // Apply flags
+        if (flags.contains("+"))
+        {
+            if (type.equals("d") || type.equals("f"))
+            {
+                if (result != null && result.indexOf("-") == -1)
+                {
+                    result.insert(0, "+");
+                }
+            }
+        }
 
-        System.out.println(result);
+        // Apply width
+        if (!width.isEmpty() && Integer.parseInt(width) > result.length())
+        {
+            int spacingAmount = Integer.parseInt(width) - result.length();
+            
+            if (flags.contains("-"))
+            {
+                if (flags.contains("0")) { insertWidthEnd(spacingAmount, result.length() - 1, '0', result); }
+                else { insertWidthEnd(spacingAmount, result.length() - 1, ' ', result); }
+            }
+            else
+            {
+                if (flags.contains("0")) { insertWidthStart(spacingAmount, 0, '0', result); }
+                else { insertWidthStart(spacingAmount, 0, ' ', result); }
+            }
+        }
 
-        // Precision for characters does nothing
+        System.out.println(result + "\n");
 
-            // Apply width
-                // Argument is not truncated even if it is greater than width
-                // Apply flags
-
-        System.out.println();
-
-        return "test";
+        return result.toString();
     }
 
-    public String regexMatch(String regex, String s)
+    private String regexMatch(String regex, String s)
     {
         StringBuilder comp = new StringBuilder();
         Pattern pattern = Pattern.compile(regex);
@@ -250,6 +279,23 @@ public class Printf
         }
 
         return comp.toString();
+    }
+
+    private void insertWidthStart(int amount, int index, char c, StringBuilder b)
+    {
+        for (int i = 0; i < amount; i++)
+        {
+            b.insert(index, c);
+        }
+    }
+
+    private void insertWidthEnd(int amount, int index, char c, StringBuilder b)
+    {
+        for (int i = 0; i < amount; i++)
+        {
+            b.insert(index, c);
+            index++;
+        }
     }
 
     //!!VERIFY ACCURACY!!//
