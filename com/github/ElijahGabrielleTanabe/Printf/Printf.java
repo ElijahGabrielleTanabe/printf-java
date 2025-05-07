@@ -242,8 +242,8 @@ public class Printf
             
             if (flags.contains("-"))
             {
-                if (flags.contains("0")) { insertWidthEnd(spacingAmount, result.length() - 1, '0', result); }
-                else { insertWidthEnd(spacingAmount, result.length() - 1, ' ', result); }
+                if (flags.contains("0")) { insertWidthEnd(spacingAmount, result.length(), '0', result); }
+                else { insertWidthEnd(spacingAmount, result.length(), ' ', result); }
             }
             else
             {
