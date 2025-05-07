@@ -114,10 +114,7 @@ public class Printf
                 throw new IllegalArgumentException("Illegal type");
             }
 
-            if (o != null)
-            {
-                return o.toString();
-            }
+            if (o != null) { return o.toString(); }
         } 
         catch (ClassNotFoundException e) 
         {
@@ -139,57 +136,53 @@ public class Printf
         System.out.println("Argument: " + o);
         System.out.println("Type: " + types.get(type));
 
-        //# Apply each individual part to the associated argument (if present)
-            // Apply precision
+        //# Apply precision to each respective type (int, double, string, char)
         switch(type)
         {
+            // Precision for Integers is minimum number of digits
             case "d" -> {
-                // Precision for Integers is minimum number of digits
-                    // Pad with leadings 0's if number of digits is less than precision
-                    // Supress output when precision is 0
+                // Pad with leadings zero's if number of digits is less than precision    
                 if (!precision.isEmpty() && o.length() < Integer.parseInt(precision))
                 {
                     result = new StringBuilder(o);
                     
                     int remainder = Integer.parseInt(precision) - o.length();
 
-                    for (int i = 0; i < remainder; i++)
+                    for (int i = 0; i < remainder; i++) 
                     {
                         result.insert(0, '0');
                     }
                 }
+                // Supress output when precision is zero
                 else if (!precision.isEmpty() && Integer.parseInt(precision) == 0)
                 {
                     result = new StringBuilder("");
                     break;
                 }
+                // No change when precision is equal to or 
+                // greater than number of digits or doesnt exist
                 else
                 {
                     result = new StringBuilder(o);
                 }
 
+                // Move "-" if present to the beginning
                 if (o.contains("-"))
                 {
                     result.deleteCharAt(result.indexOf("-"));
                     result.insert(0, "-");
                 }
             }
+            // Precision for floats and doubles is the number of decimal digits
+            // Minimum of 1, not truncated by width
             case "f" -> {
-                // Precision for floats and doubles is the number of decimal digits
-                // Minimum of 1, not truncated by width
                 int p;
 
-                // Round to original precision if no precision is given
-                if (precision.isEmpty())
-                {
-                    p = o.split("\\.")[1].length();
-                }
-                else
-                {
-                    p = Integer.parseInt(precision);
-                }
+                // If no precision present, 6 decimal places
+                if (precision.isEmpty()) { p = 6; }
+                else { p = Integer.parseInt(precision); }
                 
-                result = new StringBuilder(round(Double.valueOf(o), p).toString());
+                result = new StringBuilder(o);
 
                 int remainder = result.toString().split("\\.")[1].length();
 
@@ -200,22 +193,27 @@ public class Printf
                         result.append("0");
                     }
                 }
+                else if (remainder > p)
+                {
+                    if (p == 0) { p++; }
+
+                    result.delete(result.indexOf(".") + 1 + p, result.length());
+                }
             }
+            // Precision for Strings is the maximum number of characters
             case "s" -> {
-                // Precision for Strings is the maximum number of characters
+                
                 // Truncate at position of precision if string length is greater than precision
                 if (!precision.isEmpty() && o.length() > Integer.parseInt(precision)) 
                 {
                     result = new StringBuilder(o.substring(0, Integer.parseInt(precision))); 
                 }
+                // Truncate to first character if precision is equal to zero
                 else if (!precision.isEmpty() && Integer.parseInt(precision) == 0)
                 {
                     result = new StringBuilder(o.substring(0, 1));
                 }
-                else
-                {
-                    result = new StringBuilder(o);
-                }
+                else { result = new StringBuilder(o); }
             }
             case "c" -> {
                 // Precision for characters does nothing
@@ -296,12 +294,6 @@ public class Printf
             b.insert(index, c);
             index++;
         }
-    }
-
-    //!!VERIFY ACCURACY!!//
-    public static Double round(Double value, int scale) 
-    {
-        return Math.round(value * Math.pow(10, scale)) / Math.pow(10, scale);
     }
 
     public String getLastPrint() { return this.lastPrint; }
