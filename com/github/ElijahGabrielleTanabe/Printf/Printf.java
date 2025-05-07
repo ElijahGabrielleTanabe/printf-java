@@ -1,7 +1,5 @@
 package com.github.ElijahGabrielleTanabe.Printf;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,26 +24,16 @@ public class Printf
 
     public void print(String s, Object ... args)
     {
-        //# Find all format parameters inside message, store in a list
-            // Regex: %[\d-+.dfcs]+
+        // Message to be transformed and printed
         StringBuilder message = new StringBuilder(s);
-        ArrayList<String> formatParameters = new ArrayList<>();
-
-        Pattern pattern = Pattern.compile("%[\\d-+.dfcs]+");
-        Matcher matcher = pattern.matcher(message);
-
-        while (matcher.find())
-        {
-            formatParameters.add(matcher.group().trim());
-        }
+        //# Find all format parameters inside message, store inside a list
+        String[] formatParameters = regexMatch("(%[\\d-+.dfcs]+)", s).split("(?=%)");
 
         //# Verify number of format parameters are the same as args
-        if (formatParameters.size() != args.length) { throw new IllegalArgumentException(); }
+        if (formatParameters.length != args.length) { throw new IllegalArgumentException(); }
 
         //# Verify format parameters syntax
-            // Structure: %[flags][width][.precision]type
-                // Chaining flags is valid syntax
-                //!!NO DUPLICATE FLAGS!!
+        // Structure: %[flags][width][.precision]type
         for (String format : formatParameters)
         {
             if (!format.matches("%([+-[0]]+)?(\\d+)?(\\.[1-9](\\d+|)|\\.[0])?([dfsc])")) 
@@ -53,43 +41,45 @@ public class Printf
                 throw new IllegalArgumentException("Improper Format: " + format);
             }
         }
-        
-        //System.out.println(message);
   
-        //# Concatenate formated argument to message
-            // Replace from format parameters position
-        for (int i = 0; i < formatParameters.size(); i++)
+        //# Construct argument
+        for (int i = 0; i < formatParameters.length; i++)
         {
-            String fp = formatParameters.get(i);
-            System.out.println("Original F-Parameter: " + fp);
-            int pos = message.indexOf(fp);
-            String[] fp1 = parseParameters(fp);
-            String type = fp1[3];
+            String fp = formatParameters[i];
 
+            // Position of format argument
+            int pos = message.indexOf(fp);
+
+            // Parse parts of format argument (flags, width, precision, type)
+            String[] fpl = parseParameters(fp);
+            String type = fpl[3];
+
+            // Verify class type of argument matches parameter and transform into String
             String arg = transformArgument(type, args[i]);
 
-            message.replace(pos, pos + fp.length(), buildFormatedArg(fp1, arg));
+            // Build argument with format argument parameters
+            String formatedArgument = buildFormatedArg(fpl, arg);
+
+            // Replace from format parameters position
+            message.replace(pos, pos + fp.length(), formatedArgument);
         }
 
-        //Print out the finished product!!
-        //OR
-        //Return a String for usage
+        // Print out the finished product!!
         System.out.print(message);
+
+        // Store for usage
         this.lastPrint = message.toString();
     }
 
     private String[] parseParameters(String format)
     {
-        //# Parse format into parts
-            // Split into four parts (flags, width, precision, type)
-        String[] s = {
+        //# Parse format into parts (flags, width, precision, type)
+        return new String[]{
             regexMatch("(?:%)([+-[0]]+)(?:\\.|\\d|[dfsc])?", format), //Flags
             regexMatch("(?:[+-[0]%]+)(?<!\\.)([1-9][\\d]+)(?:\\.\\d+)?(?:[.dfsc])", format), //Width
             regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format), //Precision
             regexMatch("(?:\\d|[+-[0]]|%)([dfsc])", format) //Type
         };
-
-        return s;
     }
 
     private <T> String transformArgument(String type, T o)
@@ -127,14 +117,11 @@ public class Printf
     public String buildFormatedArg(String[] format, String o)
     {
         StringBuilder result = null;
+
         String flags = format[0];
         String width = format[1];
         String precision = format[2];
         String type = format[3];
-
-        System.out.println("F-Parameters: " + Arrays.deepToString(format));
-        System.out.println("Argument: " + o);
-        System.out.println("Type: " + types.get(type));
 
         //# Apply precision to each respective type (int, double, string, char)
         switch(type)
@@ -146,9 +133,9 @@ public class Printf
                 {
                     result = new StringBuilder(o);
                     
-                    int remainder = Integer.parseInt(precision) - o.length();
+                    int decimalPlace = Integer.parseInt(precision) - o.length();
 
-                    for (int i = 0; i < remainder; i++) 
+                    for (int i = 0; i < decimalPlace; i++) 
                     {
                         result.insert(0, '0');
                     }
@@ -161,10 +148,7 @@ public class Printf
                 }
                 // No change when precision is equal to or 
                 // greater than number of digits or doesnt exist
-                else
-                {
-                    result = new StringBuilder(o);
-                }
+                else { result = new StringBuilder(o); }
 
                 // Move "-" if present to the beginning
                 if (o.contains("-"))
@@ -174,7 +158,6 @@ public class Printf
                 }
             }
             // Precision for floats and doubles is the number of decimal digits
-            // Minimum of 1, not truncated by width
             case "f" -> {
                 int p;
 
@@ -184,16 +167,18 @@ public class Printf
                 
                 result = new StringBuilder(o);
 
-                int remainder = result.toString().split("\\.")[1].length();
-
-                if (remainder < p)
+                int decimalPlace = o.split("\\.")[1].length();
+                
+                // Append zero's to reach precision point
+                if (decimalPlace < p)
                 {
-                    for (int i = 0; i < p - remainder; i++)
+                    for (int i = 0; i < p - decimalPlace; i++)
                     {
                         result.append("0");
                     }
                 }
-                else if (remainder > p)
+                // Delete digits to reach precision point
+                else if (decimalPlace > p)
                 {
                     if (p == 0) { p++; }
 
@@ -202,7 +187,6 @@ public class Printf
             }
             // Precision for Strings is the maximum number of characters
             case "s" -> {
-                
                 // Truncate at position of precision if string length is greater than precision
                 if (!precision.isEmpty() && o.length() > Integer.parseInt(precision)) 
                 {
@@ -215,15 +199,14 @@ public class Printf
                 }
                 else { result = new StringBuilder(o); }
             }
+            // Precision for characters does nothing
             case "c" -> {
-                // Precision for characters does nothing
                 result = new StringBuilder(o);
             }
             default -> throw new IllegalArgumentException("Unknown Type: " + type);
         }
-            
-        // Argument is not truncated even if it is greater than width
-            // Apply flags
+
+        // If "+" flag present, add "+" at the start of positive numbers
         if (flags.contains("+"))
         {
             if (type.equals("d") || type.equals("f"))
@@ -235,24 +218,28 @@ public class Printf
             }
         }
 
-        // Apply width
+        //# Apply width
         if (!width.isEmpty() && Integer.parseInt(width) > result.length())
         {
             int spacingAmount = Integer.parseInt(width) - result.length();
             
+            // If "-" flag present, left align argument
             if (flags.contains("-"))
             {
+                // If "0" flag present, insert zero's
                 if (flags.contains("0")) { insertWidthEnd(spacingAmount, result.length(), '0', result); }
+                // Otherwise, insert space's
                 else { insertWidthEnd(spacingAmount, result.length(), ' ', result); }
             }
+            // Otherwise, right align argument
             else
             {
+                // If "0" flag present, insert zero's
                 if (flags.contains("0")) { insertWidthStart(spacingAmount, 0, '0', result); }
+                // Otherwise, insert space's
                 else { insertWidthStart(spacingAmount, 0, ' ', result); }
             }
         }
-
-        System.out.println(result + "\n");
 
         return result.toString();
     }
