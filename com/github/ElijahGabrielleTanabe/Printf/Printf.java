@@ -49,8 +49,8 @@ public class Printf
         for (String format : formatParameters)
         {
             if (!format.matches("%([+-[0]]+)?(\\d+)?(\\.[1-9](\\d+|)|\\.[0])?([dfsc])")) 
-            { 
-                throw new IllegalArgumentException("Improper Format: " + format); 
+            {
+                throw new IllegalArgumentException("Improper Format: " + format);
             }
         }
         
@@ -61,7 +61,7 @@ public class Printf
         for (int i = 0; i < formatParameters.size(); i++)
         {
             String fp = formatParameters.get(i);
-            System.out.println(fp);
+            System.out.println("Original F-Parameter: " + fp);
             int pos = message.indexOf(fp);
             String[] fp1 = parseParameters(fp);
             String type = fp1[3];
@@ -84,7 +84,7 @@ public class Printf
             // Split into four parts (flags, width, precision, type)
         String[] s = {
             regexMatch("(?:%)([+-[0]]+)(?:\\.|\\d|[dfsc])?", format), //Flags
-            regexMatch("(?:[+-[0]%])(?<!\\.)([1-9]+)(?:\\.\\d+)?(?:[.dfsc])", format), //Width
+            regexMatch("(?:[+-[0]%]+)(?<!\\.)([1-9][\\d]+)(?:\\.\\d+)?(?:[.dfsc])", format), //Width
             regexMatch("(?:\\.)(\\d+)(?:[dfsc])", format), //Precision
             regexMatch("(?:\\d|[+-[0]]|%)([dfsc])", format) //Type
         };
